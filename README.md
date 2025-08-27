@@ -36,6 +36,6 @@ Supports basic disk information retrieval and a clean button-based UI.
 
 ## Run
 ### On Windows:
-
-    ```bash
-   .\build\DiskInspector.exe
+```bash
+.\build\DiskInspector.exe
+```
