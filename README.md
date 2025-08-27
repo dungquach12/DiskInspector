@@ -3,6 +3,8 @@
 A simple disk inspection application built with **Qt** and **CMake**.  
 Supports basic disk information retrieval and a clean button-based UI.
 
+## Feature:
+- Read info of a FAT32 disk
 ---
 
 ## Requirements
@@ -34,6 +36,7 @@ Supports basic disk information retrieval and a clean button-based UI.
 
 ## Run
 ### On Windows:
+
     ```bash
     .\build\DiskInspector.exe
     ```
