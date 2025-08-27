@@ -22,17 +22,8 @@ Supports basic disk information retrieval and a clean button-based UI.
    cd DiskInspector
    ```
 
-2. Configure the project with CMake:
-   ```bash
-   mkdir build
-   cd build
-   cmake ..
-   ```
-
-3. Build the project
-   ```bash
-   cmake --build build
-   ```
+2. Open Qt Creator and load the `CMakeLists.txt` file.
+   Configure the project and build it using the built-in tools.
 
 ## Run
 ### On Windows:
