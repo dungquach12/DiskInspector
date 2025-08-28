@@ -5,6 +5,7 @@ Supports basic disk information retrieval and a clean button-based UI.
 
 ## Feature:
 - Read info of a FAT32 disk
+- Read FAT32 Files hierachy (also read txt file content)
 ---
 
 ## Requirements
