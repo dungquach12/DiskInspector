@@ -25,9 +25,3 @@ Supports basic disk information retrieval and a clean button-based UI.
 
 2. Open Qt Creator and load the `CMakeLists.txt` file.
    Configure the project and build it using the built-in tools.
-
-## Run
-### On Windows:
-```bash
-.\build\DiskInspector.exe
-```
