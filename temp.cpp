@@ -1,29 +1,13 @@
-#include "mainwindow.h"
-#include "ui_mainwindow.h"
-#include "DiskInspector/fat32.h"
-
-MainWindow::MainWindow(QWidget *parent)
-    : QMainWindow(parent)
-    , ui(new Ui::MainWindow)
-{
-    ui->setupUi(this);
-}
-
-MainWindow::~MainWindow()
-{
-    delete ui;
-}
-
-
 QTreeWidgetItem* MainWindow::createTreeItem(const File& file) {
-    FileTreeWidgetItem *item = new FileTreeWidgetItem(file);
+    QTreeWidgetItem *item = new QTreeWidgetItem();
     QString name = QString::fromStdString(file.fileName);
-    item->setText(0, name);
     if (!file.fileExtension.empty()) {
-        item->setText(1, QString::fromStdString(file.fileExtension));
+        name += "." + QString::fromStdString(file.fileExtension);
     }
+    item->setText(0, name);
 
-    if (file.fileSize) { item->setText(2, QString::number(file.fileSize));}
+    // Store File struct inside item (using QVariant → void* pointer trick)
+    item->setData(0, Qt::UserRole, QVariant::fromValue((qulonglong)new File(file)));
 
     // Set icon depending on type
     if ((file.attribute & 0x10) != 0) // Directory bit
@@ -70,7 +54,6 @@ void MainWindow::on_fileTree_itemExpanded(QTreeWidgetItem *item)
 
 void MainWindow::on_fileTree_itemPressed(QTreeWidgetItem *item, int column)
 {
-    ui->txtDisplay->clear();
     File *f = reinterpret_cast<File*>(item->data(0, Qt::UserRole).toULongLong());
     if (!f) return;
 
@@ -98,34 +81,4 @@ void MainWindow::on_fileTree_itemPressed(QTreeWidgetItem *item, int column)
             ui->txtDisplay->setPlainText(content);
         }
     }
-}
-
-
-void MainWindow::on_diskInputButton_clicked()
-{
-    QString diskLetter = ui->diskInput->text();
-    std::wstring drivePath = L"\\\\.\\" + diskLetter.toStdWString() + L":";
-
-    if (disk.getInfo(drivePath.c_str()) != 0) {
-        ui->resultDisplay1->setText("Can't read disk!");
-        ui->fileTree->clear();
-        return;
-    }
-
-    QString result;
-    result += "File System Type: " + QString::fromStdString(disk.getFileSysType()) + "\n";
-    result += "-------------------------------------------\n";
-    result += "Sector size (byte): " + QString::number(disk.getBytesPerSec()) + "\n";
-    result += "Sectors per cluster: " + QString::number(disk.getSecPerClus()) + "\n";
-    result += "Boot sector size (sector): " + QString::number(disk.getBootSecSize()) + "\n";
-    result += "Number of FATs: " + QString::number(disk.getNumFatTable()) + "\n";
-    result += "Volume size (sector): " + QString::number(disk.getTotalSector32()) + "\n";
-    result += "FAT size (sector/FAT): " + QString::number(disk.getFatTableSize()) + "\n";
-    result += "RDET start cluster: " + QString::number(disk.getFirstRootClus()) + "\n";
-    result += "RDET start sector: " + QString::number(disk.getFirstRDETSector()) + "\n";
-    result += "Data area start sector: " + QString::number(disk.getFirstDataSector()) + "\n";
-
-    ui->resultDisplay1->setText(result);
-    ui->fileTree->clear();
-    loadDirectory(nullptr, disk.getFirstRootClus());
 }

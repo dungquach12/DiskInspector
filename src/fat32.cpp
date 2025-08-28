@@ -1,5 +1,37 @@
 #include "DiskInspector/fat32.h"
 
+// Constants for FAT directory entries
+constexpr uint8_t ATTR_LONG_NAME = 0x0F;
+constexpr uint8_t ENTRY_DELETED = 0xE5;
+constexpr uint8_t ENTRY_EMPTY = 0x00;
+constexpr uint8_t ENTRY_DOT = 0x2E;
+constexpr int ENTRY_SIZE = 32;
+constexpr int SHORT_NAME_LEN = 8;
+constexpr int SHORT_EXT_LEN = 3;
+
+// Offsets within directory entries
+constexpr int OFFSET_ATTRIBUTE = 0x0B;
+constexpr int OFFSET_FIRST_CLUSTER = 0x1A;
+constexpr int OFFSET_FILE_SIZE = 0x1C;
+constexpr int OFFSET_SHORT_EXT = 0x08;
+
+// Long filename offsets
+constexpr int LFN_NAME1_OFFSET = 0x01;
+constexpr int LFN_NAME1_LEN = 10;
+constexpr int LFN_NAME2_OFFSET = 0x0E;
+constexpr int LFN_NAME2_LEN = 12;
+constexpr int LFN_NAME3_OFFSET = 0x1C;
+constexpr int LFN_NAME3_LEN = 4;
+
+enum class ParseResult {
+    SUCCESS,
+    ERROR_READ_SECTOR,
+    ERROR_INVALID_CLUSTER,
+    ERROR_BOUNDS_CHECK
+};
+
+// START BOOTSECTOR SECTION
+
 enum class FS_Type  { Unknown, NTFS, FAT32 };
 
 int ReadSector(const std::wstring& drive, int readPoint, BYTE sector[])
@@ -39,21 +71,18 @@ std::string hexToString(BYTE arr[], int startLoc, int size) {
 
 
 std::string clearExcessSpace(const std::string& str) {
-    std::string trimmed = str;
-
-    // Remove null characters
-    trimmed.erase(std::remove(trimmed.begin(), trimmed.end(), '\0'), trimmed.end());
-
-    // Remove multiple spaces
-    auto new_end = std::unique(trimmed.begin(), trimmed.end(),
-        [](char a, char b) { return a == ' ' && b == ' '; });
-    trimmed.erase(new_end, trimmed.end());
-
-    // Trim leading/trailing spaces
-    if (!trimmed.empty() && trimmed.front() == ' ') trimmed.erase(trimmed.begin());
-    if (!trimmed.empty() && trimmed.back() == ' ') trimmed.pop_back();
-
-    return trimmed;
+    std::string trimmed;
+    for (char c : str) {
+        // Keep only printable ASCII characters (space and above, but not DEL or higher)
+        if (c >= 32 && c <= 126) {
+            trimmed += c;
+        }
+    }
+    // Remove leading/trailing spaces
+    size_t start = trimmed.find_first_not_of(' ');
+    size_t end = trimmed.find_last_not_of(' ');
+    if (start == std::string::npos) return "";
+    return trimmed.substr(start, end - start + 1);
 }
 
 
@@ -160,4 +189,84 @@ int FATbootSector::getInfo(const std::wstring& diskLoc) {
         return 0;
     }
     return 1;
+}
+
+
+// END BOOTSECTOR SECTION
+
+
+// START THE FILES SECTION
+
+
+File::File() {
+    this->fileName = "";
+    this->fileExtension = "";
+    this->attribute = 0;
+    this->firstCluster = 0;
+    this->fileSize = 0;
+}
+
+
+std::string parseLongName(BYTE sector[], int offset, int& subEntryCount) {
+    std::string longName;
+    subEntryCount = 1;
+    uint8_t attribute = sector[offset + OFFSET_ATTRIBUTE];
+    while (attribute == sector[offset + OFFSET_ATTRIBUTE + 32 * subEntryCount]) {
+        if (sector[offset + OFFSET_ATTRIBUTE + 32 * subEntryCount] != ATTR_LONG_NAME) break;
+        subEntryCount++;
+        if ((offset + OFFSET_SHORT_EXT + 32 * subEntryCount) >= 512) {
+            break;
+        }
+    }
+    for (int i = subEntryCount - 1; i >= 0; i--) {
+        longName += hexToString(sector, offset + LFN_NAME1_OFFSET + 32 * i, LFN_NAME1_LEN)
+                 + hexToString(sector, offset + LFN_NAME2_OFFSET + 32 * i, LFN_NAME2_LEN)
+                 + hexToString(sector, offset + LFN_NAME3_OFFSET + 32 * i, LFN_NAME3_LEN);
+    }
+    return clearExcessSpace(longName);
+}
+
+
+int getFiles(int firstCluster, FATbootSector disk, std::vector<File>& list) {
+    std::vector<uint32_t> listcluster = getListClusters(firstCluster, disk);
+    std::vector<File> fileList;
+
+    for (uint32_t i : listcluster) {
+        int sectorNum = firstSectorofCluster(disk.getFirstDataSector(), disk.getSecPerClus(), i);
+        for (int j = sectorNum; j < sectorNum + disk.getSecPerClus(); ++j) {
+            BYTE sector[disk.getBytesPerSec()];
+            ReadSector(disk.drive, j, sector);
+
+            for (int k = 0; k < disk.getBytesPerSec(); k += 32) {
+                if (j == sectorNum && k == 0) k += 64;
+                uint8_t entryStatus = sector[k];
+                if (entryStatus == ENTRY_DOT || entryStatus == ENTRY_EMPTY || entryStatus == ENTRY_DELETED) continue;
+
+                uint8_t attribute = sector[k + OFFSET_ATTRIBUTE];
+                File tmp;
+
+                if (attribute == ATTR_LONG_NAME) {
+                    int subEntryCount = 0;
+                    std::string longName = parseLongName(sector, k, subEntryCount);
+                    // Move k to the short entry
+                    k += 32 * subEntryCount;
+                    // Now extract info from the short entry
+                    tmp.fileName = clearExcessSpace(longName);
+                    tmp.attribute = sector[k + OFFSET_ATTRIBUTE];
+                    memcpy(&tmp.firstCluster, sector + k + OFFSET_FIRST_CLUSTER, 2);
+                    memcpy(&tmp.fileSize, sector + k + OFFSET_FILE_SIZE, 4);
+
+                } else {
+                    tmp.fileName = clearExcessSpace(hexToString(sector, k, 8));
+                    tmp.fileExtension = clearExcessSpace(hexToString(sector, k + OFFSET_SHORT_EXT, 3));
+                    tmp.attribute = attribute;
+                    memcpy(&tmp.firstCluster, sector + k + OFFSET_FIRST_CLUSTER, 2);
+                    memcpy(&tmp.fileSize, sector + k + OFFSET_FILE_SIZE, 4);
+                }
+                fileList.push_back(tmp);
+            }
+        }
+    }
+    list = fileList;
+    return 0;
 }

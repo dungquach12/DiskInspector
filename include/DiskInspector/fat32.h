@@ -9,6 +9,7 @@
 #include<string>
 #include<vector>
 
+
 int ReadSector(const std::wstring& drive, int readPoint, BYTE sector[]);
 
 
