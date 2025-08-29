@@ -7,6 +7,7 @@ MainWindow::MainWindow(QWidget *parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
+    ui->fileTree->setColumnWidth(0,520);
 }
 
 MainWindow::~MainWindow()
@@ -103,6 +104,8 @@ void MainWindow::on_fileTree_itemPressed(QTreeWidgetItem *item, int column)
 
 void MainWindow::on_diskInputButton_clicked()
 {
+    ui->resultDisplay1->clear();
+
     QString diskLetter = ui->diskInput->text();
     std::wstring drivePath = L"\\\\.\\" + diskLetter.toStdWString() + L":";
 
@@ -112,20 +115,29 @@ void MainWindow::on_diskInputButton_clicked()
         return;
     }
 
-    QString result;
-    result += "File System Type: " + QString::fromStdString(disk.getFileSysType()) + "\n";
-    result += "-------------------------------------------\n";
-    result += "Sector size (byte): " + QString::number(disk.getBytesPerSec()) + "\n";
-    result += "Sectors per cluster: " + QString::number(disk.getSecPerClus()) + "\n";
-    result += "Boot sector size (sector): " + QString::number(disk.getBootSecSize()) + "\n";
-    result += "Number of FATs: " + QString::number(disk.getNumFatTable()) + "\n";
-    result += "Volume size (sector): " + QString::number(disk.getTotalSector32()) + "\n";
-    result += "FAT size (sector/FAT): " + QString::number(disk.getFatTableSize()) + "\n";
-    result += "RDET start cluster: " + QString::number(disk.getFirstRootClus()) + "\n";
-    result += "RDET start sector: " + QString::number(disk.getFirstRDETSector()) + "\n";
-    result += "Data area start sector: " + QString::number(disk.getFirstDataSector()) + "\n";
+    QString fsType = QString::fromStdString(disk.getFileSysType()).trimmed();
+    if (fsType != "FAT32") {
+        ui->resultDisplay1->setText("Unsupported filesystem: " + fsType);
+        ui->fileTree->clear();
+        return;
+    }
 
-    ui->resultDisplay1->setText(result);
+    QString result;
+    result += "<b>File System Type:</b> " + QString::fromStdString(disk.getFileSysType());
+    result += "<hr>";
+    result += "<table border='0' cellspacing='2' cellpadding='2'>";
+    result += "<tr><td><b>Sector size (byte):</b></td><td>" + QString::number(disk.getBytesPerSec()) + "</td></tr>";
+    result += "<tr><td><b>Sectors per cluster:</b></td><td>" + QString::number(disk.getSecPerClus()) + "</td></tr>";
+    result += "<tr><td><b>Boot sector size (sector):</b></td><td>" + QString::number(disk.getBootSecSize()) + "</td></tr>";
+    result += "<tr><td><b>Number of FATs:</b></td><td>" + QString::number(disk.getNumFatTable()) + "</td></tr>";
+    result += "<tr><td><b>Volume size (sector):</b></td><td>" + QString::number(disk.getTotalSector32()) + "</td></tr>";
+    result += "<tr><td><b>FAT size (sector/FAT):</b></td><td>" + QString::number(disk.getFatTableSize()) + "</td></tr>";
+    result += "<tr><td><b>RDET start cluster:</b></td><td>" + QString::number(disk.getFirstRootClus()) + "</td></tr>";
+    result += "<tr><td><b>RDET start sector:</b></td><td>" + QString::number(disk.getFirstRDETSector()) + "</td></tr>";
+    result += "<tr><td><b>Data area start sector:</b></td><td>" + QString::number(disk.getFirstDataSector()) + "</td></tr>";
+    result += "</table>";
+
+    ui->resultDisplay1->setHtml(result);
     ui->fileTree->clear();
     loadDirectory(nullptr, disk.getFirstRootClus());
 }

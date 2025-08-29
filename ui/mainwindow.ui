@@ -68,7 +68,7 @@
         <number>8</number>
        </property>
        <property name="leftMargin">
-        <number>0</number>
+        <number>10</number>
        </property>
        <property name="topMargin">
         <number>7</number>
@@ -156,19 +156,26 @@
            <kerning>true</kerning>
           </font>
          </property>
+         <property name="autoFillBackground">
+          <bool>false</bool>
+         </property>
          <property name="styleSheet">
-          <string notr="true">background-color: transparent;
-border: 2px solid transparent;
-</string>
+          <string notr="true">background-color: transparent;</string>
+         </property>
+         <property name="frameShape">
+          <enum>QFrame::Shape::NoFrame</enum>
+         </property>
+         <property name="frameShadow">
+          <enum>QFrame::Shadow::Sunken</enum>
          </property>
          <property name="verticalScrollBarPolicy">
-          <enum>Qt::ScrollBarPolicy::ScrollBarAlwaysOff</enum>
+          <enum>Qt::ScrollBarPolicy::ScrollBarAsNeeded</enum>
          </property>
          <property name="horizontalScrollBarPolicy">
-          <enum>Qt::ScrollBarPolicy::ScrollBarAlwaysOff</enum>
+          <enum>Qt::ScrollBarPolicy::ScrollBarAsNeeded</enum>
          </property>
          <property name="sizeAdjustPolicy">
-          <enum>QAbstractScrollArea::SizeAdjustPolicy::AdjustToContentsOnFirstShow</enum>
+          <enum>QAbstractScrollArea::SizeAdjustPolicy::AdjustToContents</enum>
          </property>
          <property name="readOnly">
           <bool>true</bool>
@@ -188,7 +195,7 @@ border: 2px solid transparent;
          </property>
          <property name="maximumSize">
           <size>
-           <width>750</width>
+           <width>16777215</width>
            <height>16777215</height>
           </size>
          </property>
@@ -216,6 +223,9 @@ border: 2px solid transparent;
          <property name="alternatingRowColors">
           <bool>false</bool>
          </property>
+         <property name="autoExpandDelay">
+          <number>1</number>
+         </property>
          <property name="indentation">
           <number>25</number>
          </property>
@@ -235,7 +245,7 @@ border: 2px solid transparent;
           <bool>false</bool>
          </property>
          <property name="wordWrap">
-          <bool>true</bool>
+          <bool>false</bool>
          </property>
          <property name="headerHidden">
           <bool>false</bool>
@@ -248,6 +258,9 @@ border: 2px solid transparent;
          </attribute>
          <attribute name="headerCascadingSectionResizes">
           <bool>false</bool>
+         </attribute>
+         <attribute name="headerDefaultSectionSize">
+          <number>120</number>
          </attribute>
          <attribute name="headerHighlightSections">
           <bool>false</bool>
@@ -282,6 +295,9 @@ border: 2px solid transparent;
      <widget class="QTextEdit" name="txtDisplay">
       <property name="sizeAdjustPolicy">
        <enum>QAbstractScrollArea::SizeAdjustPolicy::AdjustToContentsOnFirstShow</enum>
+      </property>
+      <property name="readOnly">
+       <bool>true</bool>
       </property>
      </widget>
     </item>
