@@ -3,9 +3,8 @@
 
 #include <QMainWindow>
 
-#include<iostream>
+#include <stdint.h>
 #include<windows.h>
-#include<stdio.h>
 #include<string>
 #include<vector>
 

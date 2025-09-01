@@ -1,6 +1,7 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include "DiskInspector/fat32.h"
+#include "DiskInspector/helper.h"
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -24,7 +25,7 @@ QTreeWidgetItem* MainWindow::createTreeItem(const File& file) {
         item->setText(1, QString::fromStdString(file.fileExtension));
     }
 
-    if (file.fileSize) { item->setText(2, QString::number(file.fileSize));}
+    if (file.fileSize) { item->setText(2, QString::fromStdString(convertSize(file.fileSize)));}
 
     // Set icon depending on type
     if ((file.attribute & 0x10) != 0) // Directory bit
@@ -126,7 +127,7 @@ void MainWindow::on_diskInputButton_clicked()
     result += "<b>File System Type:</b> " + QString::fromStdString(disk.getFileSysType());
     result += "<hr>";
     result += "<table border='0' cellspacing='2' cellpadding='2'>";
-    result += "<tr><td><b>Sector size (byte):</b></td><td>" + QString::number(disk.getBytesPerSec()) + "</td></tr>";
+    result += "<tr><td><b>Sector size (byte):</b></td><td>" + QString::fromStdString(convertSize(disk.getBytesPerSec())) + "</td></tr>";
     result += "<tr><td><b>Sectors per cluster:</b></td><td>" + QString::number(disk.getSecPerClus()) + "</td></tr>";
     result += "<tr><td><b>Boot sector size (sector):</b></td><td>" + QString::number(disk.getBootSecSize()) + "</td></tr>";
     result += "<tr><td><b>Number of FATs:</b></td><td>" + QString::number(disk.getNumFatTable()) + "</td></tr>";

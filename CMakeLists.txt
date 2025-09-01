@@ -23,7 +23,9 @@ set(PROJECT_SOURCES
         src/mainwindow.cpp
         src/mainwindow.h
         src/fat32.cpp
+        src/helper.cpp
         include/DiskInspector/fat32.h
+        include/DiskInspector/helper.h
         ui/mainwindow.ui
 )
 
